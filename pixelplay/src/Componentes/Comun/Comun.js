@@ -1,6 +1,6 @@
 import Cabecera from '../Cabecera/Cabecera';
-
- import { Outlet } from 'react-router-dom';
+import Piedepagina from '../Piedepagina/Piedepagina';
+import { Outlet } from 'react-router-dom';
 function Comun() {
 
   return (
