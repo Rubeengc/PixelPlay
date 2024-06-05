@@ -21,7 +21,7 @@ db.connect(err => {
     console.log('Connected to the database');
 });
 
-// Obtener juegos aleatorios
+// Ruta para obtener juegos aleatorios
 app.get('/api/games/random', (req, res) => {
     const query = 'SELECT game_id, title, cover_image_url FROM games ORDER BY RAND() LIMIT 5';
     db.query(query, (err, results) => {
@@ -33,16 +33,16 @@ app.get('/api/games/random', (req, res) => {
     });
 });
 
-// Obtener juegos mejor valorados
+// Ruta para obtener juegos mejor valorados
 app.get('/api/games/top-rated', (req, res) => {
     const query = `SELECT g.game_id, g.title, g.cover_image_url 
-                FROM games g 
-                JOIN (SELECT game_id, AVG(rating) as avg_rating 
-                      FROM reviews 
-                      GROUP BY game_id) r 
-                ON g.game_id = r.game_id 
-                ORDER BY r.avg_rating DESC 
-                LIMIT 5`;
+                   FROM games g 
+                   JOIN (SELECT game_id, AVG(rating) as avg_rating 
+                         FROM reviews 
+                         GROUP BY game_id) r 
+                   ON g.game_id = r.game_id 
+                   ORDER BY r.avg_rating DESC 
+                   LIMIT 5`;
     db.query(query, (err, results) => {
         if (err) {
             res.status(500).send(err);
@@ -52,7 +52,95 @@ app.get('/api/games/top-rated', (req, res) => {
     });
 });
 
+// Ruta para obtener detalles de un juego
+app.get('/api/games/:gameId', (req, res) => {
+    const gameId = req.params.gameId;
+    console.log("gameId recibido:", gameId);
+    const query = 'SELECT * FROM games WHERE game_id = ?';
+    db.query(query, [gameId], (err, results) => {
+        if (err) {
+            console.error("Error en la consulta:", err);
+            res.status(500).send(err);
+        } else {
+            if (results.length > 0) {
+                res.json(results[0]);
+            } else {
+                res.status(404).send('Juego no encontrado');
+            }
+        }
+    });
+});
+
+// Ruta para obtener reseñas de un juego
+app.get('/api/games/:gameId/reviews', (req, res) => {
+    const gameId = req.params.gameId;
+    console.log("gameId recibido para reviews:", gameId);
+    const query = 'SELECT * FROM reviews WHERE game_id = ?';
+    db.query(query, [gameId], (err, results) => {
+        if (err) {
+            console.error("Error en la consulta de reviews:", err);
+            res.status(500).send(err);
+        } else {
+            res.json(results);
+        }
+    });
+});
+
+// Ruta para agregar un comentario y valoración a un juego
+app.post('/api/reviews', (req, res) => {
+    const { userId, gameId, comment, rating } = req.body;
+
+    if (!userId || !gameId || rating === undefined || comment === undefined) {
+        return res.status(400).send('Todos los campos son obligatorios');
+    }
+
+    const checkQuery = 'SELECT * FROM games WHERE game_id = ?';
+    db.query(checkQuery, [gameId], (checkErr, checkResults) => {
+        if (checkErr) {
+            console.error('Error al verificar el juego:', checkErr);
+            return res.status(500).send('Error al verificar el juego');
+        }
+
+        if (checkResults.length === 0) {
+            return res.status(404).send('Juego no encontrado');
+        }
+
+        const insertQuery = 'INSERT INTO reviews (user_id, game_id, comment, rating) VALUES (?, ?, ?, ?)';
+        db.query(insertQuery, [userId, gameId, comment, rating], (insertErr, insertResults) => {
+            if (insertErr) {
+                console.error('Error al enviar el comentario:', insertErr.sqlMessage);
+                return res.status(500).send(`Error al enviar el comentario: ${insertErr.sqlMessage}`);
+            }
+            res.status(201).send('Comentario enviado correctamente');
+        });
+    });
+});
+
+
+// Ruta para obtener detalles de un usuario
+app.get('/api/users/:userId', (req, res) => {
+    const userId = req.params.userId;
+    const query = 'SELECT username FROM users WHERE user_id = ?';
+    db.query(query, userId, (err, results) => {
+        if (err) {
+            res.status(500).send(err);
+        } else {
+            if (results.length > 0) {
+                res.json(results[0]);
+            } else {
+                res.status(404).send('Usuario no encontrado');
+            }
+        }
+    });
+});
+
+// Middleware para manejar rutas no encontradas (404)
+app.use((req, res, next) => {
+    res.status(404).send('Ruta no encontrada');
+});
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
+
