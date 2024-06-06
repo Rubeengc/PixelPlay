@@ -88,30 +88,44 @@ app.get('/api/games/:gameId/reviews', (req, res) => {
 
 // Ruta para agregar un comentario y valoración a un juego
 app.post('/api/reviews', (req, res) => {
-    const { userId, gameId, comment, rating } = req.body;
+    const token = req.headers.authorization.split(' ')[1]; // Obtener el token del encabezado Authorization
+    const { gameId, comment, rating } = req.body;
 
-    if (!userId || !gameId || rating === undefined || comment === undefined) {
-        return res.status(400).send('Todos los campos son obligatorios');
-    }
+    // Decodificar el token para obtener el nombre de usuario
+    const username = decodeToken(token);
 
-    const checkQuery = 'SELECT * FROM games WHERE game_id = ?';
-    db.query(checkQuery, [gameId], (checkErr, checkResults) => {
-        if (checkErr) {
-            console.error('Error al verificar el juego:', checkErr);
-            return res.status(500).send('Error al verificar el juego');
+    // Consultar la base de datos para obtener el ID del usuario
+    const getUserIdQuery = 'SELECT user_id FROM users WHERE username = ?';
+    db.query(getUserIdQuery, [username], (err, results) => {
+        if (err) {
+            console.error('Error al obtener el ID del usuario:', err);
+            return res.status(500).send('Error al obtener el ID del usuario');
         }
 
-        if (checkResults.length === 0) {
-            return res.status(404).send('Juego no encontrado');
-        }
+        const userId = results[0].user_id;
 
-        const insertQuery = 'INSERT INTO reviews (user_id, game_id, comment, rating) VALUES (?, ?, ?, ?)';
-        db.query(insertQuery, [userId, gameId, comment, rating], (insertErr, insertResults) => {
-            if (insertErr) {
-                console.error('Error al enviar el comentario:', insertErr.sqlMessage);
-                return res.status(500).send(`Error al enviar el comentario: ${insertErr.sqlMessage}`);
+        const checkUserQuery = 'SELECT user_id FROM users WHERE username = ?';
+        db.query(checkUserQuery, [userId], (checkUserErr, checkUserResults) => {
+            if (checkUserErr) {
+                console.error('Error al verificar el usuario:', checkUserErr);
+                return res.status(500).send('Error al verificar el usuario');
             }
-            res.status(201).send('Comentario enviado correctamente');
+        
+            if (checkUserResults.length === 0) {
+                return res.status(404).send('Usuario no encontrado');
+            }
+        
+            const user_id = checkUserResults[0].user_id;
+        
+            // Ahora que tenemos el user_id, podemos insertar el comentario en la tabla de reviews
+            const insertQuery = 'INSERT INTO reviews (user_id, game_id, comment, rating) VALUES (?, ?, ?, ?)';
+            db.query(insertQuery, [user_id, gameId, comment, rating], (insertErr, insertResults) => {
+                if (insertErr) {
+                    console.error('Error al enviar el comentario:', insertErr.sqlMessage);
+                    return res.status(500).send(`Error al enviar el comentario: ${insertErr.sqlMessage}`);
+                }
+                res.status(201).send('Comentario enviado correctamente');
+            });
         });
     });
 });
@@ -193,6 +207,36 @@ app.post('/api/registro', async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: 'Error al crear el usuario' });
     }
+});
+app.post('/api/favoritos/:gameId', authenticate, (req, res) => {
+    const { gameId } = req.body;
+    const userId = req.userId;
+    
+    const favorite = { userId, gameId };
+    favorites.push(favorite);
+    res.status(201).send('Juego añadido a favoritso');
+});
+
+// Endpoint para borrar un juego de favoritos
+app.delete('/api/favorites/:gameId', authenticate, (req, res) => {
+    const { gameId } = req.params;
+    const userId = req.userId;
+
+    const index = favorites.findIndex(fav => fav.userId === userId && fav.gameId === gameId);
+    if (index !== -1) {
+        favorites.splice(index, 1);
+        res.status(200).send('Juego borrado de favoritos');
+    } else {
+        res.status(404).send('Juego no encontrado');
+    }
+});
+// Endpoint para obtener un juego de favoritos
+app.get('/api/favoritos', authenticate, (req, res) => {
+    const { gameId } = req.params;
+    const userId = req.userId;
+
+    const isFavorite = favorites.some(fav => fav.userId === userId && fav.gameId === gameId);
+    res.status(200).json({ isFavorite });
 });
 // Middleware para manejar rutas no encontradas (404)
 app.use((req, res, next) => {

@@ -9,6 +9,7 @@ const Paginadetalle = ({ gameId }) => {
     const [newComment, setNewComment] = useState('');
     const [newRating, setNewRating] = useState(1);
     const [averageRating, setAverageRating] = useState(0);
+    const [isFavorite, setIsFavorite] = useState(false);
     const token = sessionStorage.getItem("Mitoken");
 
     useEffect(() => {
@@ -18,11 +19,12 @@ const Paginadetalle = ({ gameId }) => {
                 setIsLoading(false);
             })
             .catch(error => {
-                console.error("Error fetching game details:", error);
+                console.error("Error al cargar los detalles del juego:", error);
                 setIsLoading(false);
             });
 
         fetchReviews();
+        checkIfFavorite();
     }, [gameId]);
 
     useEffect(() => {
@@ -38,7 +40,7 @@ const Paginadetalle = ({ gameId }) => {
             });
             setReviews(response.data);
         } catch (error) {
-            console.error('Error fetching reviews:', error);
+            console.error('Error al cargar las reviews:', error);
         }
     };
 
@@ -55,7 +57,7 @@ const Paginadetalle = ({ gameId }) => {
     const handleSubmit = async (event) => {
         event.preventDefault();
         try {
-            await axios.post('http://localhost:3001/api/reviews', { gameId: gameId, comment: newComment, rating: newRating, user: token }, {
+            await axios.post('http://localhost:3001/api/reviews', { gameId, comment: newComment, rating: newRating }, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -65,7 +67,7 @@ const Paginadetalle = ({ gameId }) => {
             setNewRating(1);
             window.location.reload(); 
         } catch (error) {
-            console.error('Error submitting review:', error);
+            console.error('Error guardar la review:', error);
         }
     };
 
@@ -73,10 +75,44 @@ const Paginadetalle = ({ gameId }) => {
         return (
             <div className="rating">
                 {Array.from({ length: 5 }, (_, index) => (
-                    <span key={index} className={index < rating ? "star filled" : "star"}>★</span>
+                    <span key={index} className={index < rating ? "star-filled" : "star"}>★</span>
                 ))}
             </div>
         );
+    };
+
+    const toggleFavorite = async () => {
+        try {
+            if (isFavorite) {
+                await axios.delete(`http://localhost:3001/api/favorites/${gameId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+            } else {
+                await axios.post('http://localhost:3001/api/favorites', { gameId }, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+            }
+            setIsFavorite(!isFavorite);
+        } catch (error) {
+            console.error('Error al cambiar de favoritos:', error);
+        }
+    };
+
+    const checkIfFavorite = async () => {
+        try {
+            const response = await axios.get(`http://localhost:3001/api/favorites/${gameId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            setIsFavorite(response.data.isFavorite);
+        } catch (error) {
+            console.error('Error al comprobar el favorito:', error);
+        }
     };
 
     if (isLoading) return <div>Loading...</div>;
@@ -85,7 +121,15 @@ const Paginadetalle = ({ gameId }) => {
     return (
         <div className="general">
             <div className="columna-izq">
-                <img src={game.cover_image_url} alt={game.title} className="caratula" />
+            <img src={game.cover_image_url} alt={game.title} className="caratula" />
+             
+             <br/>
+             <button className='botonfav'
+                onClick={toggleFavorite} 
+            >
+                {isFavorite ? 'Fav' : 'Añadir'}
+            </button>
+            <br/>
                 <div className="trailer">
                     <iframe 
                         src={`https://www.youtube.com/embed/${game.trailer_url}`} 
@@ -139,4 +183,4 @@ const Paginadetalle = ({ gameId }) => {
     );
 };
 
-export default Paginadetalle;
+export default Paginadetalle;       

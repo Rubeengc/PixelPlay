@@ -23,6 +23,7 @@ const Iniciosesion = () => {
                 }
             });
             sessionStorage.setItem("Mitoken", response.data.username);
+            console.log(sessionStorage.getItem("Mitoken"));
             navigate("/");
         } catch (error) {
             if (error.response && error.response.status === 401) {
@@ -36,7 +37,7 @@ const Iniciosesion = () => {
     return (
         <div className='body'>
             <form onSubmit={mandarEnvio} className='formulario'>
-                <h2>Iniciar Sesión</h2>
+                <h2 className='subtitulo'>Iniciar Sesión</h2>
                 <br/>
                 <div className='contenedor'>
                     <span>Nombre de usuario: </span>
