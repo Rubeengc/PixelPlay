@@ -7,6 +7,7 @@ import Paginadetalle from './Componentes/Pagina_Detalle/Paginadetalle';
 import { useParams } from 'react-router-dom';
 import Iniciosesion from './Componentes/Iniciosesion/Iniciosesion';
 import Registro from './Componentes/Registro/Registro';
+import Favoritos from './Componentes/Favoritos/Favoritos';
 
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
             <Route path="games/:gameId" element={<PaginadetalleWrapper />} />
             <Route path="iniciosesion" element={<Iniciosesion />} />
             <Route path="registro" element={<Registro />} />
+            <Route path="favoritos" element={<Favoritos />} />
           </Route>
         </Routes>
       </BrowserRouter>

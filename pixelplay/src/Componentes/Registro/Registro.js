@@ -35,9 +35,8 @@ const Registro = () => {
 
     return (
         <div className='body'>
-           
             <form onSubmit={handleSubmit} className='formularioregistro' >
-            <h2>Registro</h2>
+            <h2 className='subtitulo'>Registro</h2>
                 <div className='contenedor'>
                     <span>Nombre de usuario: </span><br/>
                     <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required />
