@@ -5,6 +5,9 @@ import Comun from './Componentes/Comun/Comun';
 import Main from './Componentes/Main/Main';
 import Paginadetalle from './Componentes/Pagina_Detalle/Paginadetalle';
 import { useParams } from 'react-router-dom';
+import Iniciosesion from './Componentes/Iniciosesion/Iniciosesion';
+import Registro from './Componentes/Registro/Registro';
+
 
 function App() {
   return (
@@ -15,6 +18,8 @@ function App() {
             <Route path="/" element={<Main/>}></Route>
             {/* Utiliza el hook useParams para obtener el gameId de la URL */}
             <Route path="games/:gameId" element={<PaginadetalleWrapper />} />
+            <Route path="iniciosesion" element={<Iniciosesion />} />
+            <Route path="registro" element={<Registro />} />
           </Route>
         </Routes>
       </BrowserRouter>
