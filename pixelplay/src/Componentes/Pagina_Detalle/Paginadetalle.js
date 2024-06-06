@@ -9,6 +9,7 @@ const Paginadetalle = ({ gameId }) => {
     const [newComment, setNewComment] = useState('');
     const [newRating, setNewRating] = useState(1);
     const [averageRating, setAverageRating] = useState(0);
+    const token = sessionStorage.getItem("Mitoken");
 
     useEffect(() => {
         axios.get(`http://localhost:3001/api/games/${gameId}`)
@@ -30,7 +31,11 @@ const Paginadetalle = ({ gameId }) => {
 
     const fetchReviews = async () => {
         try {
-            const response = await axios.get(`http://localhost:3001/api/games/${gameId}/reviews`);
+            const response = await axios.get(`http://localhost:3001/api/games/${gameId}/reviews`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
             setReviews(response.data);
         } catch (error) {
             console.error('Error fetching reviews:', error);
@@ -50,11 +55,15 @@ const Paginadetalle = ({ gameId }) => {
     const handleSubmit = async (event) => {
         event.preventDefault();
         try {
-            await axios.post('http://localhost:3001/api/reviews', { gameId: gameId, comment: newComment, rating: newRating });
-            fetchReviews(); // Refresh the reviews list after submitting a new review
+            await axios.post('http://localhost:3001/api/reviews', { gameId: gameId, comment: newComment, rating: newRating, user: token }, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            fetchReviews();
             setNewComment('');
             setNewRating(1);
-            window.location.reload(); // Reload the page after submitting the review
+            window.location.reload(); 
         } catch (error) {
             console.error('Error submitting review:', error);
         }

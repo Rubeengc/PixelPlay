@@ -5,7 +5,7 @@ const cors = require('cors');
 const app = express();
 app.use(cors());
 app.use(express.json());
-
+ 
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
@@ -134,6 +134,66 @@ app.get('/api/users/:userId', (req, res) => {
     });
 });
 
+
+const iniciosesionUser = (username, password) => {
+    return new Promise((resolve, reject) => {
+        // Realiza una consulta a la base de datos para encontrar el usuario con el nombre de usuario dado
+        db.query('SELECT * FROM users WHERE username = ?', [username], (error, results) => {
+            if (error) {
+                reject(error); 
+            } else {
+                if (results.length === 0) {
+                    reject('Usuario no encontrado'); 
+                } else {
+                    const user = results[0];
+                    if (password === user.password_hash) {
+                        resolve(user);
+                    } else {
+                        reject('Contraseña incorrecta');
+                    }
+                }
+            }
+        });
+    });
+};
+
+app.post('/api/iniciosesion', async (req, res) => {
+    const { username, password } = req.body;
+    try {
+        const user = await iniciosesionUser(username, password);
+        res.json({ username: user.username }); 
+    } catch (error) {
+        res.status(401).json({ message: error }); 
+    }
+});
+
+
+// Función para crear un nuevo usuario
+const crearUsuario = (username, email, password) => {
+    return new Promise((resolve, reject) => {
+        // Guarda el usuario con el nombre de usuario, correo electrónico y contraseña en la base de datos
+        db.query('INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)', [username, email, password], (error, results) => {
+            if (error) {
+                reject(error); 
+            } else {
+                resolve(results);
+            }
+        });
+    });
+};
+
+app.post('/api/registro', async (req, res) => {
+    const { username, email, password } = req.body;
+    try {
+        await crearUsuario(username, email, password);
+        console.log('Contraseña ingresada:', password);
+                    console.log('usuario introducido:', username);
+                    console.log('usuario introducido:', email);
+        res.status(201).json({ message: 'Usuario creado exitosamente' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error al crear el usuario' });
+    }
+});
 // Middleware para manejar rutas no encontradas (404)
 app.use((req, res, next) => {
     res.status(404).send('Ruta no encontrada');
