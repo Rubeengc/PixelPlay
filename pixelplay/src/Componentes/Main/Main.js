@@ -4,6 +4,8 @@ import axios from 'axios';
 import "slick-carousel/slick/slick.css"; 
 import "slick-carousel/slick/slick-theme.css"; 
 import './Main.css'; 
+import { Link } from 'react-router-dom';
+import Paginadetalle from '../Pagina_Detalle/Paginadetalle';
 
 const Main = () => {
     const [randomGames, setRandomGames] = useState([]);
@@ -35,7 +37,9 @@ const Main = () => {
             <Slider {...sliderSettings}>
                 {randomGames.map(game => (
                     <div key={game.game_id} className="slider-item">
-                        <img src={game.cover_image_url} alt={game.title} className="slider-image"/>
+                        <Link to={`/games/${game.game_id}`}>
+                            <img src={game.cover_image_url} alt={game.title} className="slider-image"/>
+                        </Link>
                         <p className='titulo'>{game.title}</p>
                     </div>
                 ))}
@@ -45,11 +49,17 @@ const Main = () => {
             <Slider {...sliderSettings}>
                 {topRatedGames.map(game => (
                     <div key={game.game_id} className="slider-item">
-                        <img src={game.cover_image_url} alt={game.title} className="slider-image"/>
+                        <Link to={`/games/${game.game_id}`}>
+                            <img src={game.cover_image_url} alt={game.title} className="slider-image"/>
+                        </Link>
                         <p className='titulo'>{game.title}</p>
                     </div>
                 ))}
             </Slider>
+
+            {/* Este componente manejará la visualización de detalles del juego */}
+            {/* Por defecto, no se muestra nada hasta que se haga clic en un juego */}
+            <Paginadetalle gameId={null} />
         </div>
     );
 };
